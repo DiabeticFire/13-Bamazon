@@ -19,11 +19,10 @@ connection.query("SELECT * FROM products", (err, res) => {
   if (err) throw err;
 
   res.forEach(product => {
-    let id = "id: " + product.item_id;
+    let id = "id: " + typeId(product.item_id);
     let name = " || name: " + product.product_name;
-    let price = " || price: " + product.price;
+    let price = " || price: " + typePrice(product.price);
 
-    id = id.padEnd(7);
     name = name.padEnd(25);
 
     console.log(id + name + price);
@@ -51,15 +50,52 @@ function ready() {
 
 function enoughSupply(id, ordered) {
   connection.query(
-    "SELECT stock_quantity FROM products WHERE item_id = ?",
+    "SELECT stock_quantity, price FROM products WHERE item_id = ?",
     [id],
     (err, res) => {
       if (err) throw err;
 
       let supply = res[0].stock_quantity;
+      let price = res[0].price;
 
       if (ordered > supply) console.log("Insufficient Supply");
-      else console.log("Order Complete");
+      else completeOrder(id, supply, ordered, price);
     }
   );
+}
+
+function completeOrder(id, supply, ordered, price) {
+  connection.query(
+    "UPDATE products SET stock_quantity = ? WHERE item_id = ?",
+    [supply - ordered, id],
+    err => {
+      if (err) throw err;
+
+      console.log(
+        "Thank you for your purchase of " + typePrice(price * ordered)
+      );
+    }
+  );
+}
+
+function typePrice(n) {
+  let result = "$";
+  if (n % 1 === 0) result += n + ".00";
+  else {
+    let decimal = n - Math.floor(n);
+    let whole = n - decimal;
+
+    decimal = decimal.toString();
+
+    decimal = decimal.padEnd(2, "0");
+    decimal = decimal.substr(0, 2);
+
+    result += whole + "." + decimal;
+  }
+  return result;
+}
+
+function typeId(n) {
+  n = n.toString();
+  return n.padStart(3, "0");
 }
