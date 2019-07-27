@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const typeSet = require("./typeSet");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -19,9 +20,9 @@ connection.query("SELECT * FROM products", (err, res) => {
   if (err) throw err;
 
   res.forEach(product => {
-    let id = "id: " + typeId(product.item_id);
+    let id = "id: " + typeSet.id(product.item_id);
     let name = " || name: " + product.product_name;
-    let price = " || price: " + typePrice(product.price);
+    let price = " || price: " + typeSet.price(product.price);
 
     name = name.padEnd(25);
 
@@ -58,8 +59,10 @@ function enoughSupply(id, ordered) {
       let supply = res[0].stock_quantity;
       let price = res[0].price;
 
-      if (ordered > supply) console.log("Insufficient Supply");
-      else completeOrder(id, supply, ordered, price);
+      if (ordered > supply) {
+        console.log("Insufficient Supply");
+        connection.end();
+      } else completeOrder(id, supply, ordered, price);
     }
   );
 }
@@ -72,30 +75,10 @@ function completeOrder(id, supply, ordered, price) {
       if (err) throw err;
 
       console.log(
-        "Thank you for your purchase of " + typePrice(price * ordered)
+        "Thank you for your purchase of " + typeSet.price(price * ordered)
       );
+
+      connection.end();
     }
   );
-}
-
-function typePrice(n) {
-  let result = "$";
-  if (n % 1 === 0) result += n + ".00";
-  else {
-    let decimal = n - Math.floor(n);
-    let whole = n - decimal;
-
-    decimal = decimal.toString();
-
-    decimal = decimal.padEnd(2, "0");
-    decimal = decimal.substr(0, 2);
-
-    result += whole + "." + decimal;
-  }
-  return result;
-}
-
-function typeId(n) {
-  n = n.toString();
-  return n.padStart(3, "0");
 }
