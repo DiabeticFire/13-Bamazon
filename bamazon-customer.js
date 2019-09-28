@@ -19,6 +19,8 @@ console.log("Here are our products:");
 connection.query("SELECT * FROM products", (err, res) => {
   if (err) throw err;
 
+  let numOfIDs = 0;
+
   res.forEach(product => {
     let id = "id: " + typeSet.id(product.item_id);
     let name = " || name: " + product.product_name;
@@ -27,12 +29,14 @@ connection.query("SELECT * FROM products", (err, res) => {
     name = name.padEnd(25);
 
     console.log(id + name + price);
+
+    numOfIDs++;
   });
 
-  ready();
+  ready(numOfIDs);
 });
 
-function ready() {
+function ready(numOfIDs) {
   inquirer
     .prompt([
       {
@@ -45,7 +49,10 @@ function ready() {
       }
     ])
     .then(answers => {
-      enoughSupply(answers.id, answers.quantity);
+      let id = Number(answers.id);
+      let quantity = Number(answers.quantity);
+      if (id <= numOfIDs) enoughSupply(id, quantity);
+      else console.log("Invalid ID");
     });
 }
 
